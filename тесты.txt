@@ -1,0 +1,981 @@
+функционал основной
+begin
+var # x, y, z;
+var @ a, b;
+var & flag, c;
+x assign #8;
+y assign #4;
+z assign x umn y;
+flag assign &true;
+enter a b
+displ x, y, a, b, flag, z
+end
+
+
+условный оператор 
+begin
+var # x;
+var # y;
+x assign #3;
+y assign #4;
+if x GRT y then displ x else displ y end;
+displ x, y
+end
+
+условный цикл 
+begin
+var # sum, i;
+sum assign #0;
+i assign #1;
+while i LOWE #2 do
+    sum assign sum add i;
+    i assign i add #1;
+next
+displ sum
+end
+
+6
+
+фиксированный цикл 
+begin
+var # sum, i;
+sum assign #0;
+for i assign #1 val #4 do
+    sum assign sum add i;
+displ sum
+end
+1 
+3
+6
+10
+15
+
+Комментарий
+begin
+(**)
+end
+
+
+
+
+1.Мат задачи чисел разных типов (int + float).
+==Ожидается выход int/int=real.
+begin
+var # a, b;
+var @ c, d;
+a assign #5;
+c assign @3.5;
+d assign c disa #2;
+displ a, c, d
+end
+
+5 3.5 1.5 
+
+
+вариант с булевым
+Введите код, завершите ввод 'end'.
+begin
+var & e, f, g, h;
+e assign &true;
+f assign &false;
+g assign e || f;
+h assign e && f;
+displ e, f, g, h
+end
+True False True False 
+
+
+неверный вариант 
+begin
+var #x;
+var &b;
+b assign &true;
+x assign #10;
+g assign b ||x;
+displ b,x,g
+end
+SyntaxError: Некорректное описание переменных.
+
+2.Присваивание значения неправильного типа.
+begin
+var # a; 
+a assign @3.5; 
+displ a
+end
+TypeError: Переменная 'a' типа int, но присваиваемое значение типа float.
+
+
+
+деление на ноль
+begin
+var # x, y, z;
+var @ a, b;
+var & flag, c;
+x assign #8;
+y assign #0;
+z assign x del y;
+flag assign &true;
+enter a b
+displ x, y, a, b, flag, z
+end
+ValueError: Ошибка при вычислении выражения: Деление на ноль.
+
+Переменная не объявлена
+begin 
+var # x,y;
+z assign #10;
+end
+Переменная 'z' не объявлена.
+
+
+
+Сравнения
+begin
+var # x;
+var @ y;
+var & c;
+x assign #10;
+y assign @10.0;
+c assign x GRE y;
+displ c
+end
+ValueError: Операнды для операций сравнения должны быть либо целыми числами (#), либо числами с плавающей точкой (@).
+
+
+
+2,8,10,16 системы счисления
+begin
+var # x;
+var # y;
+var # z;
+var # w;
+enter x
+y assign o13;
+z assign D11;
+enter w
+displ x
+displ y
+displ z
+displ w
+end
+15 
+11
+11
+3856
+
+экспон
+begin
+var # x;
+var # y;
+var @ z;
+x assign #2e2;  
+y assign #4e1;  
+z assign @1.23e-2;  
+if x GRT y then displ x else displ y end;
+displ x, y, z
+end
+
+
+
+
+
+
+код работающий 
+
+class Interpreter:
+    def __init__(self):
+        self.variables = {}
+        self.described_variables = set()
+        self.condition_stack = []
+        self.skip_block = False
+        self.while_stack = []
+        self.for_stack = []
+
+    def execute(self, lines):
+        if not lines or lines[0].strip().lower() != "begin":
+            raise SyntaxError("Программа должна начинаться с 'begin'.")
+
+        index = 1  # Начинаем с первой строки после 'begin'
+        in_comment_block = False
+        while index < len(lines):
+            line = lines[index].strip()
+
+            if "(*" in line:
+                in_comment_block = True
+            if "*)" in line:
+                in_comment_block = False
+                index += 1
+                continue
+            if in_comment_block:
+                index += 1
+                continue
+
+            if line.startswith("var"):  # Описание переменных
+                self.handle_declaration(line)
+            elif "assign" in line and not line.startswith("for"):  # Присваивание значений
+                self.handle_assignment(line)
+            elif line.lower().startswith("enter"):  # Оператор ввода
+                self.handle_input(line)
+            elif line.lower().startswith("displ"):  # Оператор вывода
+                self.handle_display(line)
+            elif line.lower().startswith("if"):  # Условный оператор
+                index = self.handle_if(lines, index)  # Обрабатываем if
+            elif line.lower().startswith("while"):
+                index = self.handle_while(line, lines, index)
+            elif line.lower().startswith("for"):  # Фиксированный цикл
+                index = self.handle_for(line, lines, index)  # Обрабатываем for
+            elif line.lower() == "next":
+                index += 1  # Пропускаем команду next
+                continue
+            elif line.lower() == "end":
+                return
+            else:
+                raise SyntaxError(f"Неизвестная команда: {line}")
+            index += 1
+
+    def handle_declaration(self, line):
+        parts = line[4:].split(";")  # Убираем "var " и разбиваем по ';'
+        for declaration in parts:
+            declaration = declaration.strip()
+            if not declaration:
+                continue
+            type_and_vars = declaration.split(" ", 1)
+            if len(type_and_vars) != 2:
+                raise SyntaxError("Некорректное описание переменных.")
+
+            var_type = type_and_vars[0].strip()  # Тип (#, @, &)
+            identifiers = [var.strip() for var in type_and_vars[1].split(",")]
+
+            for identifier in identifiers:
+                if identifier in self.variables:
+                    raise SyntaxError(f"Переменная '{identifier}' уже объявлена.")
+                if var_type not in ["#", "@", "&"]:
+                    raise SyntaxError(f"Некорректный тип '{var_type}'.")
+                # Инициализируем переменную значением по умолчанию
+                if var_type == "#":
+                    self.variables[identifier] = 0
+                elif var_type == "@":
+                    self.variables[identifier] = 0.0
+                elif var_type == "&":
+                    self.variables[identifier] = False
+                self.described_variables.add(identifier)
+
+    def handle_assignment(self, line):
+        parts = line.split("assign")
+        if len(parts) != 2:
+            raise SyntaxError("Некорректное выражение.")
+
+        var_name = parts[0].strip()
+        expression = parts[1].strip().rstrip(";")
+
+        if var_name not in self.variables:
+            raise SyntaxError(f"Переменная '{var_name}' не объявлена.")
+
+        var_type = type(self.variables[var_name])
+        value = self.get_value(expression)
+
+        if var_type == int and not isinstance(value, int):
+            raise TypeError(f"Переменная '{var_name}' типа int, но присваиваемое значение типа {type(value).__name__}.")
+        elif var_type == float and not isinstance(value, float):
+            raise TypeError(f"Переменная '{var_name}' типа float, но присваиваемое значение типа {type(value).__name__}.")
+        elif var_type == bool and not isinstance(value, bool):
+            raise TypeError(f"Переменная '{var_name}' типа bool, но присваиваемое значение типа {type(value).__name__}.")
+
+        self.variables[var_name] = value
+
+    def handle_input(self, line):
+        parts = line[5:].split()  # Убираем "enter " и делим по пробелам
+        for var_name in parts:
+            var_name = var_name.strip()
+            if var_name not in self.variables:
+                raise SyntaxError(f"Переменная '{var_name}' не объявлена.")
+
+            # Запрашиваем ввод от пользователя
+            value = input(f"Введите значение для {var_name}: ").strip()
+
+            # В зависимости от типа переменной, преобразуем введенное значение
+            if isinstance(self.variables[var_name], int):
+                try:
+                    self.variables[var_name] = int(value)
+                except ValueError:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается целое число.")
+            elif isinstance(self.variables[var_name], float):
+                try:
+                    self.variables[var_name] = float(value)
+                except ValueError:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается число с плавающей точкой.")
+            elif isinstance(self.variables[var_name], bool):
+                if value.lower() == "true":
+                    self.variables[var_name] = True
+                elif value.lower() == "false":
+                    self.variables[var_name] = False
+                else:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается логическое значение (true/false).")
+
+    def handle_display(self, line):
+        expressions = line[5:].strip()  # Удаляем лишние символы
+        if not expressions:
+            raise SyntaxError("Не указаны выражения для вывода.")
+
+        expr_list = expressions.split(",")
+        for expr in expr_list:
+            expr = expr.strip()
+            value = self.get_value(expr)
+            print(value, end=" ")
+        print()
+
+    def handle_if(self, lines, index):
+        line = lines[index].strip()
+        if "then" not in line or "end" not in line:
+            raise SyntaxError("Ожидается синтаксис 'if <условие> then <оператор> [else <оператор>] end'.")
+
+        condition = line[line.index("if") + 2:line.index("then")].strip()
+        body = line[line.index("then") + 4:line.rindex("end")].strip()
+
+        if "else" in body:
+            then_expression = body[:body.index("else")].strip()
+            else_expression = body[body.index("else") + 4:].strip()
+        else:
+            then_expression = body
+            else_expression = None
+
+        # Вычисляем условие
+        condition_result = self.evaluate_expression(condition)
+
+        if condition_result:
+            self.execute_block(then_expression.split(";"))
+        elif else_expression:
+            self.execute_block(else_expression.split(";"))
+        return index
+
+    def handle_while(self, line, lines, index):
+        if not line.lower().startswith("while"):
+            raise SyntaxError("Некорректный вызов while.")
+
+        condition = line[5:].strip().rstrip("do")
+        condition_value = self.evaluate_expression(condition)
+        self.while_stack.append((condition, index))
+
+        while condition_value:
+            j = index + 1
+            while j < len(lines):
+                line = lines[j].strip()
+                if line.lower() == "next":  # Завершение блока
+                    break
+                elif "var" in line:  # Описание переменных
+                    self.handle_declaration(line)
+                elif "assign" in line:  # Присваивание значений
+                    self.handle_assignment(line)
+                elif line.lower().startswith("enter"):
+                    self.handle_input(line)
+                elif line.lower().startswith("displ"):
+                    self.handle_display(line)
+                elif line.lower().startswith("if"):
+                    j = self.handle_if(lines, j)
+                elif line.lower().startswith("while"):
+                    j = self.handle_while(line, lines, j)
+                elif line.lower().startswith("for"):
+                    j = self.handle_for(line, lines, j)
+                else:
+                    raise SyntaxError(f"Неизвестная команда: {line}")
+                j += 1
+
+            condition_value = self.evaluate_expression(condition)
+            self.while_stack[-1] = (condition, index)
+
+        self.while_stack.pop()
+        return index
+
+    def handle_for(self, line, lines, index):
+        if not line.lower().startswith("for"):
+            raise SyntaxError("Некорректный вызов for.")
+
+        parts = line[3:].strip().rstrip("do").split(" val ")
+        if len(parts) != 2:
+            raise SyntaxError("Некорректный синтаксис for.")
+
+        assignment = parts[0].strip()
+        end_expression = parts[1].strip()
+
+        # Разбиваем присваивание на переменную и начальное значение
+        var_name, start_value = assignment.split(" assign ")
+        var_name = var_name.strip()
+        start_value = start_value.strip()
+
+        # Выполняем присваивание начального значения
+        self.handle_assignment(f"{var_name} assign {start_value}")
+
+        # Обрабатываем end_expression как значение
+        if end_expression.startswith("#"):
+            end = int(end_expression[1:])
+        elif end_expression.startswith("@"):
+            end = float(end_expression[1:])
+        else:
+            raise SyntaxError(f"Некорректное выражение: {end_expression}")
+
+        if var_name not in self.described_variables:
+            raise ValueError(f"Переменная '{var_name}' не описана.")
+
+        self.for_stack.append((var_name, end, index))
+
+        while self.variables[var_name] <= end:
+            j = index + 1
+            while j < len(lines):
+                line = lines[j].strip()
+                if "var" in line:  # Описание переменных
+                    self.handle_declaration(line)
+                elif "assign" in line:  # Присваивание значений
+                    self.handle_assignment(line)
+                elif line.lower().startswith("enter"):
+                    self.handle_input(line)
+                elif line.lower().startswith("displ"):
+                    self.handle_display(line)
+                elif line.lower().startswith("if"):
+                    j = self.handle_if(lines, j)
+                elif line.lower().startswith("while"):
+                    j = self.handle_while(line, lines, j)
+                elif line.lower().startswith("for"):
+                    j = self.handle_for(line, lines, j)
+                else:
+                    raise SyntaxError(f"Неизвестная команда: {line}")
+                j += 1
+
+            self.variables[var_name] += 1
+            self.for_stack[-1] = (var_name, end, index)
+
+        self.for_stack.pop()
+        return index
+
+    def execute_block(self, lines):
+        for line in lines:
+            if not line.strip():
+                continue
+            if "var" in line:  # Описание переменных
+                self.handle_declaration(line)
+            elif "assign" in line:  # Присваивание значений
+                self.handle_assignment(line)
+            elif line.lower().startswith("enter"):
+                self.handle_input(line)
+            elif line.lower().startswith("displ"):
+                self.handle_display(line)
+            elif line.lower().startswith("if"):
+                self.handle_if(lines, lines.index(line))
+            elif line.lower().startswith("while"):
+                self.handle_while(line, lines, lines.index(line))
+            elif line.lower().startswith("for"):
+                self.handle_for(line, lines, lines.index(line))
+            else:
+                raise SyntaxError(f"Неизвестная команда: {line}")
+
+    def evaluate_expression(self, expression):
+        tokens = expression.split()
+        if len(tokens) != 3:
+            raise SyntaxError(f"Некорректное выражение: {expression}")
+
+        operand1 = self.get_value(tokens[0])
+        operator = tokens[1]
+        operand2 = self.get_value(tokens[2])
+
+        # Проверка типов операндов
+        if isinstance(operand1, bool) or isinstance(operand2, bool):
+            if not (isinstance(operand1, bool) and isinstance(operand2, bool)):
+                raise ValueError("Операции между булевыми значениями и числами не допускаются.")
+
+        try:
+            if operator == "add":
+                return self.add(operand1, operand2)
+            elif operator == "disa":
+                return self.subtract(operand1, operand2)
+            elif operator == "||":  # Дизъюнкция
+                return bool(operand1) or bool(operand2)
+            elif operator == "umn":
+                return self.multiply(operand1, operand2)
+            elif operator == "del":
+                return self.divide(operand1, operand2)
+            elif operator == "&&":  # Конъюнкция
+                return bool(operand1) and bool(operand2)
+            elif operator == "EQV":
+                return operand1 == operand2
+            elif operator == "NEQ":
+                return operand1 != operand2
+            elif operator == "GRT":
+                return operand1 > operand2
+            elif operator == "LOWT":
+                return operand1 < operand2
+            elif operator == "LOWE":
+                return operand1 <= operand2
+            elif operator == "GRE":
+                return operand1 >= operand2
+            else:
+                raise ValueError(f"Неизвестная операция: {operator}")
+        except Exception as e:
+            raise ValueError(f"Ошибка при вычислении выражения: {e}")
+
+    def get_value(self, token):
+        token = token.strip()
+        if token.startswith("#"):  # Целое число
+            return int(token[1:])
+        elif token.startswith("@"):  # Плавающая точка
+            return float(token[1:])
+        elif token.startswith("&"):  # Булевое значение
+            return token[1:] == "true"
+        elif token in self.variables:  # Переменная
+            return self.variables[token]
+        elif token == "true":
+            return True
+        elif token == "false":
+            return False
+        else:
+            # Если токен представляет собой выражение, вычисляем его значение
+            return self.evaluate_expression(token)
+
+    def add(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 + operand2
+        raise ValueError("Операция сложения возможна только с числовыми типами.")
+
+    def subtract(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 - operand2
+        raise ValueError("Операция вычитания возможна только с числовыми типами.")
+
+    def multiply(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 * operand2
+        raise ValueError("Операция умножения возможна только с числовыми типами.")
+
+    def divide(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            if operand2 == 0:
+                raise ValueError("Деление на ноль.")
+            return float(operand1) / float(operand2)
+        else:
+            raise ValueError("Операция деления возможна только с числовыми типами.")
+
+if __name__ == "__main__":
+    print("Введите код, завершите ввод 'end'.")
+    lines = []
+    while True:
+        try:
+            line = input()
+            if line.strip().lower() == "end":
+                break
+            lines.append(line)
+        except EOFError:
+            break
+
+    interpreter = Interpreter()
+    interpreter.execute(lines)
+
+
+
+
+
+
+
+
+ещё один
+
+
+class Interpreter:
+    def __init__(self):
+        self.variables = {}
+        self.described_variables = set()
+        self.condition_stack = []
+        self.skip_block = False
+        self.while_stack = []
+        self.for_stack = []
+
+    def execute(self, lines):
+        if not lines or lines[0].strip().lower() != "begin":
+            raise SyntaxError("Программа должна начинаться с 'begin'.")
+
+        index = 1  # Начинаем с первой строки после 'begin'
+        in_comment_block = False
+        while index < len(lines):
+            line = lines[index].strip()
+
+            if "(*" in line:
+                in_comment_block = True
+            if "*)" in line:
+                in_comment_block = False
+                index += 1
+                continue
+            if in_comment_block:
+                index += 1
+                continue
+
+            if line.startswith("var"):  # Описание переменных
+                self.handle_declaration(line)
+            elif "assign" in line and not line.startswith("for"):  # Присваивание значений
+                self.handle_assignment(line)
+            elif line.lower().startswith("enter"):  # Оператор ввода
+                self.handle_input(line)
+            elif line.lower().startswith("displ"):  # Оператор вывода
+                self.handle_display(line)
+            elif line.lower().startswith("if"):  # Условный оператор
+                index = self.handle_if(lines, index)  # Обрабатываем if
+            elif line.lower().startswith("while"):
+                index = self.handle_while(line, lines, index)
+            elif line.lower().startswith("for"):  # Фиксированный цикл
+                index = self.handle_for(line, lines, index)  # Обрабатываем for
+            elif line.lower() == "next":
+                index += 1  # Пропускаем команду next
+                continue
+            elif line.lower() == "end":
+                return
+            else:
+                raise SyntaxError(f"Неизвестная команда: {line}")
+            index += 1
+
+    def handle_declaration(self, line):
+        parts = line[4:].split(";")  # Убираем "var " и разбиваем по ';'
+        for declaration in parts:
+            declaration = declaration.strip()
+            if not declaration:
+                continue
+            type_and_vars = declaration.split(" ", 1)
+            if len(type_and_vars) != 2:
+                raise SyntaxError("Некорректное описание переменных.")
+
+            var_type = type_and_vars[0].strip()  # Тип (#, @, &)
+            identifiers = [var.strip() for var in type_and_vars[1].split(",")]
+
+            for identifier in identifiers:
+                if identifier in self.variables:
+                    raise SyntaxError(f"Переменная '{identifier}' уже объявлена.")
+                if var_type not in ["#", "@", "&"]:
+                    raise SyntaxError(f"Некорректный тип '{var_type}'.")
+                # Инициализируем переменную значением по умолчанию
+                if var_type == "#":
+                    self.variables[identifier] = 0
+                elif var_type == "@":
+                    self.variables[identifier] = 0.0
+                elif var_type == "&":
+                    self.variables[identifier] = False
+                self.described_variables.add(identifier)
+
+    def handle_assignment(self, line):
+        parts = line.split("assign")
+        if len(parts) != 2:
+            raise SyntaxError("Некорректное выражение.")
+
+        var_name = parts[0].strip()
+        expression = parts[1].strip().rstrip(";")
+
+        if var_name not in self.variables:
+            raise SyntaxError(f"Переменная '{var_name}' не объявлена.")
+
+        var_type = type(self.variables[var_name])
+        value = self.get_value(expression)
+
+        if var_type == int and not isinstance(value, int):
+            raise TypeError(f"Переменная '{var_name}' типа int, но присваиваемое значение типа {type(value).__name__}.")
+        elif var_type == float and not isinstance(value, float):
+            raise TypeError(f"Переменная '{var_name}' типа float, но присваиваемое значение типа {type(value).__name__}.")
+        elif var_type == bool and not isinstance(value, bool):
+            raise TypeError(f"Переменная '{var_name}' типа bool, но присваиваемое значение типа {type(value).__name__}.")
+
+        self.variables[var_name] = value
+
+    def handle_input(self, line):
+        parts = line[5:].split()  # Убираем "enter " и делим по пробелам
+        for var_name in parts:
+            var_name = var_name.strip()
+            if var_name not in self.variables:
+                raise SyntaxError(f"Переменная '{var_name}' не объявлена.")
+
+            # Запрашиваем ввод от пользователя
+            value = input(f"Введите значение для {var_name}: ").strip()
+
+            # В зависимости от типа переменной, преобразуем введенное значение
+            if isinstance(self.variables[var_name], int):
+                try:
+                    self.variables[var_name] = int(value)
+                except ValueError:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается целое число.")
+            elif isinstance(self.variables[var_name], float):
+                try:
+                    self.variables[var_name] = float(value)
+                except ValueError:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается число с плавающей точкой.")
+            elif isinstance(self.variables[var_name], bool):
+                if value.lower() == "true":
+                    self.variables[var_name] = True
+                elif value.lower() == "false":
+                    self.variables[var_name] = False
+                else:
+                    raise ValueError(f"Неверный тип данных для переменной {var_name}, ожидается логическое значение (true/false).")
+
+    def handle_display(self, line):
+        expressions = line[5:].strip()  # Удаляем лишние символы
+        if not expressions:
+            raise SyntaxError("Не указаны выражения для вывода.")
+
+        expr_list = expressions.split(",")
+        for expr in expr_list:
+            expr = expr.strip()
+            value = self.get_value(expr)
+            print(value, end=" ")
+        print()
+
+    def handle_if(self, lines, index):
+        line = lines[index].strip()
+        if "then" not in line or "end" not in line:
+            raise SyntaxError("Ожидается синтаксис 'if <условие> then <оператор> [else <оператор>] end'.")
+
+        condition = line[line.index("if") + 2:line.index("then")].strip()
+        body = line[line.index("then") + 4:line.rindex("end")].strip()
+
+        if "else" in body:
+            then_expression = body[:body.index("else")].strip()
+            else_expression = body[body.index("else") + 4:].strip()
+        else:
+            then_expression = body
+            else_expression = None
+
+        # Вычисляем условие
+        condition_result = self.evaluate_expression(condition)
+
+        if condition_result:
+            self.execute_block(then_expression.split(";"))
+        elif else_expression:
+            self.execute_block(else_expression.split(";"))
+        return index
+
+    def handle_while(self, line, lines, index):
+        if not line.lower().startswith("while"):
+            raise SyntaxError("Некорректный вызов while.")
+
+        condition = line[5:].strip().rstrip("do")
+        condition_value = self.evaluate_expression(condition)
+        self.while_stack.append((condition, index))
+
+        while condition_value:
+            j = index + 1
+            while j < len(lines):
+                line = lines[j].strip()
+                if line.lower() == "next":  # Завершение блока
+                    break
+                elif "var" in line:  # Описание переменных
+                    self.handle_declaration(line)
+                elif "assign" in line:  # Присваивание значений
+                    self.handle_assignment(line)
+                elif line.lower().startswith("enter"):
+                    self.handle_input(line)
+                elif line.lower().startswith("displ"):
+                    self.handle_display(line)
+                elif line.lower().startswith("if"):
+                    j = self.handle_if(lines, j)
+                elif line.lower().startswith("while"):
+                    j = self.handle_while(line, lines, j)
+                elif line.lower().startswith("for"):
+                    j = self.handle_for(line, lines, j)
+                else:
+                    raise SyntaxError(f"Неизвестная команда: {line}")
+                j += 1
+
+            condition_value = self.evaluate_expression(condition)
+            self.while_stack[-1] = (condition, index)
+
+        self.while_stack.pop()
+        return index
+
+    def handle_for(self, line, lines, index):
+        if not line.lower().startswith("for"):
+            raise SyntaxError("Некорректный вызов for.")
+
+        parts = line[3:].strip().rstrip("do").split(" val ")
+        if len(parts) != 2:
+            raise SyntaxError("Некорректный синтаксис for.")
+
+        assignment = parts[0].strip()
+        end_expression = parts[1].strip()
+
+        # Разбиваем присваивание на переменную и начальное значение
+        var_name, start_value = assignment.split(" assign ")
+        var_name = var_name.strip()
+        start_value = start_value.strip()
+
+        # Выполняем присваивание начального значения
+        self.handle_assignment(f"{var_name} assign {start_value}")
+
+        # Обрабатываем end_expression как значение
+        if end_expression.startswith("#"):
+            end = int(end_expression[1:])
+        elif end_expression.startswith("@"):
+            end = float(end_expression[1:])
+        else:
+            raise SyntaxError(f"Некорректное выражение: {end_expression}")
+
+        if var_name not in self.described_variables:
+            raise ValueError(f"Переменная '{var_name}' не описана.")
+
+        self.for_stack.append((var_name, end, index))
+
+        while self.variables[var_name] <= end:
+            j = index + 1
+            while j < len(lines):
+                line = lines[j].strip()
+                if "var" in line:  # Описание переменных
+                    self.handle_declaration(line)
+                elif "assign" in line:  # Присваивание значений
+                    self.handle_assignment(line)
+                elif line.lower().startswith("enter"):
+                    self.handle_input(line)
+                elif line.lower().startswith("displ"):
+                    self.handle_display(line)
+                elif line.lower().startswith("if"):
+                    j = self.handle_if(lines, j)
+                elif line.lower().startswith("while"):
+                    j = self.handle_while(line, lines, j)
+                elif line.lower().startswith("for"):
+                    j = self.handle_for(line, lines, j)
+                else:
+                    raise SyntaxError(f"Неизвестная команда: {line}")
+                j += 1
+
+            self.variables[var_name] += 1
+            self.for_stack[-1] = (var_name, end, index)
+
+        self.for_stack.pop()
+        return index
+
+    def execute_block(self, lines):
+        for line in lines:
+            if not line.strip():
+                continue
+            if "var" in line:  # Описание переменных
+                self.handle_declaration(line)
+            elif "assign" in line:  # Присваивание значений
+                self.handle_assignment(line)
+            elif line.lower().startswith("enter"):
+                self.handle_input(line)
+            elif line.lower().startswith("displ"):
+                self.handle_display(line)
+            elif line.lower().startswith("if"):
+                self.handle_if(lines, lines.index(line))
+            elif line.lower().startswith("while"):
+                self.handle_while(line, lines, lines.index(line))
+            elif line.lower().startswith("for"):
+                self.handle_for(line, lines, lines.index(line))
+            else:
+                raise SyntaxError(f"Неизвестная команда: {line}")
+
+    def evaluate_expression(self, expression):
+        tokens = expression.split()
+        if len(tokens) != 3:
+            raise SyntaxError(f"Некорректное выражение: {expression}")
+
+        operand1 = self.get_value(tokens[0])
+        operator = tokens[1]
+        operand2 = self.get_value(tokens[2])
+
+        # Проверка типов операндов для операций сравнения
+        if operator in ["NEQ", "EQV", "GRT", "LOWT", "LOWE", "GRE"]:
+            if (isinstance(operand1, int) and isinstance(operand2, int)) or (isinstance(operand1, float) and isinstance(operand2, float)):
+                pass
+            else:
+                raise ValueError("Операнды для операций сравнения должны быть либо целыми числами (#), либо числами с плавающей точкой (@).")
+
+        try:
+            if operator == "add":
+                return self.add(operand1, operand2)
+            elif operator == "disa":
+                return self.subtract(operand1, operand2)
+            elif operator == "||":  # Дизъюнкция
+                return bool(operand1) or bool(operand2)
+            elif operator == "umn":
+                return self.multiply(operand1, operand2)
+            elif operator == "del":
+                return self.divide(operand1, operand2)
+            elif operator == "&&":  # Конъюнкция
+                return bool(operand1) and bool(operand2)
+            elif operator == "EQV":
+                return operand1 == operand2
+            elif operator == "NEQ":
+                return operand1 != operand2
+            elif operator == "GRT":
+                return operand1 > operand2
+            elif operator == "LOWT":
+                return operand1 < operand2
+            elif operator == "LOWE":
+                return operand1 <= operand2
+            elif operator == "GRE":
+                return operand1 >= operand2
+            else:
+                raise ValueError(f"Неизвестная операция: {operator}")
+        except Exception as e:
+            raise ValueError(f"Ошибка при вычислении выражения: {e}")
+
+    def get_value(self, token):
+        token = token.strip()
+        if token.startswith("#"):  # Целое число
+            return int(token[1:])
+        elif token.startswith("@"):  # Плавающая точка
+            return float(token[1:])
+        elif token.startswith("&"):  # Булевое значение
+            return token[1:] == "true"
+        elif token in self.variables:  # Переменная
+            return self.variables[token]
+        elif token == "true":
+            return True
+        elif token == "false":
+            return False
+        else:
+            # Если токен представляет собой выражение, вычисляем его значение
+            return self.evaluate_expression(token)
+
+    def add(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 + operand2
+        raise ValueError("Операция сложения возможна только с числовыми типами.")
+
+    def subtract(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 - operand2
+        raise ValueError("Операция вычитания возможна только с числовыми типами.")
+
+    def multiply(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            return operand1 * operand2
+        raise ValueError("Операция умножения возможна только с числовыми типами.")
+
+    def divide(self, operand1, operand2):
+        if isinstance(operand1, (int, float)) and isinstance(operand2, (int, float)):
+            if operand2 == 0:
+                raise ValueError("Деление на ноль.")
+            return float(operand1) / float(operand2)
+        else:
+            raise ValueError("Операция деления возможна только с числовыми типами.")
+
+if __name__ == "__main__":
+    print("Введите код, завершите ввод 'end'.")
+    lines = []
+    while True:
+        try:
+            line = input()
+            if line.strip().lower() == "end":
+                break
+            lines.append(line)
+        except EOFError:
+            break
+
+    interpreter = Interpreter()
+    interpreter.execute(lines)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

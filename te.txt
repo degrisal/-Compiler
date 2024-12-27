@@ -1,0 +1,28 @@
+begin
+var # x, y, z, sum, i,l,k,u,suma,j;
+var @ v;
+var & flag, c;
+x assign #8;
+y assign #4;
+u assign #2e2;
+v assign @1.23e-2;
+z assign x umn y;
+flag assign &true;
+if x GRT y then displ x else displ y end;
+sum assign #0;
+i assign #1;
+while i LOWE #2 do
+    sum assign sum add i;
+    i assign i add #1;
+next
+suma assign #0;
+for j assign #1 val #4 do
+    suma assign suma add i;
+displ suma
+displ sum , z
+enter l
+enter k
+displ l, k
+displ u, v
+(* COMMENT *)
+
